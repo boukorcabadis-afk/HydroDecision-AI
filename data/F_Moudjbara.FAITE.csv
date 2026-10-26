@@ -1,0 +1,5 @@
+Nome de forage,Code de l'ouvrage,Type de l'ouvrage,Date de mise en service,Profonder,Niveau statique,Niveau dynamique,Gestionnaire de l'ouvrage,État de l'ouvrage,Agglomérations desservies,WILAYA,Daira,Commune,X,Y,Z,Débit mobilisé,Débit exploité,Fréquence de pompage ,Profondeur de pose (calageJ de pompe
+forage 01 ain naga_opt,F01 AN,Forage,2012,190,28,,APC,En exploitation,AS,Djelfa,Ain ibel,Moudjbara,545398,3800322,877,1382.4,518.4,12,
+forage 01 moudjbara_opt,F02 MJ,Forage,1995,250,,,APC,En exploitation,ACL,Djelfa,Ain ibel,Moudjbara,543479,3818445,1046,2160,432,24,
+forage 03 moudjbara_opt,F03 MJ,Forage,2002,220,41,100,APC,En exploitation,ACL,Djelfa,Ain ibel,Moudjbara,543748,3818337,1044,1728,1296,24,
+forage 05 moudjbara_opt,F05 MJ,Forage,2022,200,,,APC,Réserve,ACL,Djelfa,Ain ibel,Moudjbara,542936,3817354,1041,1296,,,

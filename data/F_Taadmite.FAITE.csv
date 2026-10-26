@@ -1,0 +1,13 @@
+Nome de forage,Code de l'ouvrage,Type de l'ouvrage,Date de mise en service,Profonder,Niveau statique,Niveau dynamique,Gestionnaire de l'ouvrage,État de l'ouvrage,Agglomérations desservies,WILAYA,Daira,Commune,X,Y,Z,Débit mobilisé,Débit exploité,Fréquence de pompage ,Profondeur de pose (calageJ de pompe
+forage 01 benhamed_opt,F01 BH,Forage,1984,220,,,APC,En éxploitation ,AS,Djelfa,Ain ibel,Taadmit,487611,3802127,1191,1036.8,576,16,
+forage 01 f_opt,F01 F,Forage,1984,200,,,APC,En éxploitation ,AS,Djelfa,Ain ibel,Taadmit,492788,3799325,1148,2160,864,12,
+forage 01 hiouhi_opt,F01 H,Forage,1994,280,30,,APC,En éxploitation ,AS/ZE,Djelfa,Ain ibel,Taadmit,509309,3802560,1080,6912,288,4,
+forage 01 meguisba_opt,F01 M,Forage,1997,200,,,APC,En éxploitation ,ZE,Djelfa,Ain ibel,Taadmit,496045,3794896,1069,4320,144,4,
+forage 01 morhma_opt,F01 MR,Forage,,180,,,APC,Abandonné,AS,Djelfa,Ain ibel,Taadmit,507591,3776472,882,518.4,,,
+forage 01 N'thila_opt,F01 NTH,Forage,,180,,,APC,Abandonné,,Djelfa,Ain ibel,Taadmit,516545,3770014,793,1036.8,,,
+forage 01 safiette_opt,F01 S,Forage,1985,160,30,,APC,En éxploitation ,ZE,Djelfa,Ain ibel,Taadmit,504230,3791437,988,1728,201.6,14,65
+forage 02 morhma_opt,F02 MR,Forage,2007,260,,,APC,En éxploitation ,AS,Djelfa,Ain ibel,Taadmit,507716,3776772,884,518.4,234,13,70
+forage 02 N'thila_opt,F02 NTH,Forage,,200,,,APC,En éxploitation ,AS,Djelfa,Ain ibel,Taadmit,516722,3770011,798,4579.2,604.8,24,
+forage 03 N'thila_opt,F03 NTH,Forage,,260,,,APC,Non electrifie,AS,Djelfa,Ain ibel,Taadmit,517298,3769475,794,1036.8,,,
+forage 05 taadmit_opt,F05 T,Forage,2013,200,32,93,APC,En éxploitation ,ACL,Djelfa,Ain ibel,Taadmit,498692,3795639,1086,3465,900,10,
+forage 06 taadmit_opt,F06 T,Forage,2015,250,35,95,APC,A devloper,ACL,Djelfa,Ain ibel,Taadmit,498951,3795713,1083,1296,,,

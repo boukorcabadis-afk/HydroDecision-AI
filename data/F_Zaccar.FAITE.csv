@@ -1,0 +1,3 @@
+Nome de forage,Code de l'ouvrage,Type de l'ouvrage,Date de mise en service,Profonder,Niveau statique,Niveau dynamique,Gestionnaire de l'ouvrage,État de l'ouvrage,Agglomérations desservies,WILAYA,Daira,Commune,X,Y,Z,Débit mobilisé,Débit exploité,Fréquence de pompage ,Profondeur de pose (calageJ de pompe
+forage 01 zeccar_opt,F01 Z,Forage,1984,200,,,APC,En exploitation,ACL,Djelfa,Ain ibel,Zaccar,528472,3810379,1117,3628.8,1728,24,
+forage 02 zeccar_opt,F02 Z,,,230,,,,Manque de pompe,ACL,Djelfa,Ain ibel,Zaccar,529204,3810097,1104,3801.6,,,
