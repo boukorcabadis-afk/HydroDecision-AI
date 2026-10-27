@@ -3,6 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import os
+import importlib.metadata
+import streamlit as st
+
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 from langchain.agents.middleware import (
@@ -18,47 +22,42 @@ from tools import (
     get_spi12_analysis,
 )
 
-import importlib.metadata
+# =========================================================
+# 1. API KEYS
+# =========================================================
+
+try:
+    if "GOOGLE_API_KEY" in st.secrets:
+        os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+except Exception:
+    pass
 
 print("LangChain:", importlib.metadata.version("langchain"))
 print("LangGraph:", importlib.metadata.version("langgraph"))
 
-import os
-import streamlit as st
-
-if "GOOGLE_API_KEY" in st.secrets:
-    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-
-if "GROQ_API_KEY" in st.secrets:
-    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
-    
 # =========================================================
-# 1. AI MODELS
+# 2. AI MODELS
 # =========================================================
 
 primary_model = init_chat_model(
     "gemini-3.8-flash",
     model_provider="google_genai",
-    max_retries=3,
+    max_retries=0,
     timeout=60,
 )
 
 fallback_model = init_chat_model(
     "openai/gpt-oss-120b",
     model_provider="groq",
-    max_retries=2,
+    max_retries=1,
     timeout=60,
 )
 
-fallback_middleware = ModelFallbackMiddleware(fallback_model)
-
-call_limit_middleware = ModelCallLimitMiddleware(
-    run_limit=8
-)
-
-
 # =========================================================
-# 2. GROUNDWATER EXPERT
+# 3. GROUNDWATER EXPERT
 # =========================================================
 
 groundwater_expert = create_agent(
@@ -68,8 +67,8 @@ groundwater_expert = create_agent(
         get_agriculture_data,
     ],
     middleware=[
-        fallback_middleware,
-        call_limit_middleware,
+        ModelFallbackMiddleware(fallback_model),
+        ModelCallLimitMiddleware(run_limit=8),
     ],
     system_prompt="""
 You are a groundwater specialist.
@@ -98,9 +97,8 @@ If data are unavailable, state this clearly.
 """,
 )
 
-
 # =========================================================
-# 3. REMOTE SENSING EXPERT
+# 4. REMOTE SENSING EXPERT
 # =========================================================
 
 remote_sensing_expert = create_agent(
@@ -110,8 +108,8 @@ remote_sensing_expert = create_agent(
         get_climate_data,
     ],
     middleware=[
-        fallback_middleware,
-        call_limit_middleware,
+        ModelFallbackMiddleware(fallback_model),
+        ModelCallLimitMiddleware(run_limit=8),
     ],
     system_prompt="""
 You are a satellite remote-sensing specialist
@@ -144,9 +142,8 @@ from interpretations.
 """,
 )
 
-
 # =========================================================
-# 4. DROUGHT AND CLIMATE EXPERT
+# 5. DROUGHT AND CLIMATE EXPERT
 # =========================================================
 
 drought_expert = create_agent(
@@ -157,8 +154,8 @@ drought_expert = create_agent(
         get_well_data,
     ],
     middleware=[
-        fallback_middleware,
-        call_limit_middleware,
+        ModelFallbackMiddleware(fallback_model),
+        ModelCallLimitMiddleware(run_limit=8),
     ],
     system_prompt="""
 You are a hydroclimatologist specializing in drought

@@ -25,23 +25,45 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from folium.plugins import PolyLineTextPath
 import ee
+import json
+import base64
 
 @st.cache_resource
 def initialize_earth_engine():
-    ee.Initialize(project="supple-kayak-477318-k9")
+    key_b64 = st.secrets["EARTH_ENGINE_KEY_B64"]
+    key_json = json.loads(base64.b64decode(key_b64))
+    credentials = ee.ServiceAccountCredentials(
+        key_json["client_email"],
+        key_data=json.dumps(key_json),
+    )
+    ee.Initialize(
+        credentials=credentials,
+        project="supple-kayak-477318-k9",
+    )
     return True
 
+
 # =========================================================
-# AI QUESTION-AND-ANSWER MODEL
+# AI QUESTION-AND-ANSWER MODEL WITH FALLBACK
 # =========================================================
 
-qa_model = init_chat_model(
+from langchain.chat_models import init_chat_model
+
+primary_qa_model = init_chat_model(
     "gemini-3.8-flash",
     model_provider="google_genai",
-    max_retries=3,
+    max_retries=0,
     timeout=60,
 )
 
+fallback_qa_model = init_chat_model(
+    "qwen/qwen3.8-27b",
+    model_provider="groq",
+    max_retries=1,
+    timeout=60,
+)
+
+qa_model = primary_qa_model.with_fallbacks([fallback_qa_model])
 
 
 # =========================================================

@@ -33,11 +33,10 @@ primary_model = init_chat_model(
 )
 
 fallback_model = init_chat_model(
-    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-120b",
     model_provider="groq",
-    max_retries=2,
+    max_retries=1,
     timeout=60,
-    max_tokens=800,
 )
 
 fallback_middleware = ModelFallbackMiddleware(fallback_model)
