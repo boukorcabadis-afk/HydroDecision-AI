@@ -18,7 +18,20 @@ from tools import (
     get_spi12_analysis,
 )
 
+import importlib.metadata
 
+print("LangChain:", importlib.metadata.version("langchain"))
+print("LangGraph:", importlib.metadata.version("langgraph"))
+
+import os
+import streamlit as st
+
+if "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+
+if "GROQ_API_KEY" in st.secrets:
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+    
 # =========================================================
 # 1. AI MODELS
 # =========================================================
