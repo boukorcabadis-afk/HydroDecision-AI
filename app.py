@@ -27,6 +27,17 @@ from folium.plugins import PolyLineTextPath
 import ee
 import json
 import base64
+import io
+import re
+from xml.sax.saxutils import escape
+
+from io import BytesIO
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 @st.cache_resource
 def initialize_earth_engine():
@@ -123,207 +134,112 @@ st.set_page_config(
 
 
 # =========================================================
-# 2. CUSTOM DARK THEME
+# =========================================================
+# 2. CUSTOM PROFESSIONAL DARK THEME
 # =========================================================
 
 st.markdown(
     """
-    
     <style>
-    
-    /* Make chat input text readable */
-    .stChatInput textarea {
-        color: #ffffff !important;
-        background-color: #263445 !important;
-        caret-color: #ffffff !important;
-    }
-    
-    .stChatInput textarea::placeholder {
-        color: #cbd5e1 !important;
-        opacity: 1 !important;
-    }
-
-    /* ===== Global theme ===== */
     :root {
-        --bg: #08111f;
-        --panel: #101d30;
-        --panel-hover: #162840;
-        --border: #263b52;
-        --teal: #45e0c0;
-        --text: #edf5ff;
-        --muted: #9db0c8;
+        --hd-bg: #07111f;
+        --hd-panel: #0d1b2c;
+        --hd-panel-2: #11243a;
+        --hd-border: rgba(142, 178, 205, .19);
+        --hd-teal: #48e0c2;
+        --hd-blue: #69b9ff;
+        --hd-text: #edf6ff;
+        --hd-muted: #9eb2c9;
     }
 
     .stApp {
+        color: var(--hd-text);
         background:
-            radial-gradient(ellipse at top right,
-                rgba(13, 110, 110, 0.14), transparent 38%),
-            var(--bg);
-        color: var(--text);
+            radial-gradient(ellipse at 82% 0%, rgba(23, 156, 151, .14), transparent 35%),
+            radial-gradient(ellipse at 0% 30%, rgba(39, 100, 167, .10), transparent 32%),
+            var(--hd-bg);
     }
-
-    [data-testid="stHeader"] {
-        background: rgba(8, 17, 31, 0.88);
-    }
-
+    [data-testid="stHeader"] { background: rgba(7, 17, 31, .82); }
     [data-testid="stSidebar"] {
-        background: #0d192a;
-        border-right: 1px solid var(--border);
+        background: linear-gradient(180deg, #0b1929 0%, #091522 100%);
+        border-right: 1px solid var(--hd-border);
     }
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] label { color: var(--hd-text); }
+    .block-container { max-width: 1580px; padding-top: 1.35rem; padding-bottom: 3rem; }
 
-    [data-testid="stSidebar"] * {
-        color: var(--text);
-    }
-
-    .block-container {
-        max-width: 1500px;
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-    }
-
-    /* ===== Branding ===== */
-    .main-header {
-        font-size: clamp(2.2rem, 4vw, 3.3rem);
-        font-weight: 850;
-        letter-spacing: -1.8px;
-        line-height: 1.15;
-        margin: 0 0 0.4rem 0;
-        color: var(--teal);
-    }
-
-    .sub-header {
-        color: var(--muted);
-        font-size: 1.05rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .impact-box {
-        background: linear-gradient(125deg, #11263a, #103b40);
-        border: 1px solid #28615f;
-        border-radius: 18px;
-        padding: 1.5rem 1.7rem;
-        line-height: 1.85;
-        margin: 1.2rem 0 1.8rem 0;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.14);
-    }
-
-    .section-title {
-        color: var(--teal);
-        font-size: 1.55rem;
-        font-weight: 750;
-        margin: 0.4rem 0 0.8rem 0;
-    }
-
-    .small-note {
-        color: var(--muted);
-        font-size: 0.86rem;
-    }
-
-    /* ===== Metric cards ===== */
-    [data-testid="stMetric"] {
-        background: linear-gradient(145deg, #122239, #0e1a2b);
-        border: 1px solid var(--border);
-        border-radius: 15px;
-        padding: 1.1rem 1.2rem;
-        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
-    }
-
-    [data-testid="stMetricLabel"] {
-        color: var(--muted);
-        font-size: 0.9rem;
-    }
-
-    [data-testid="stMetricValue"] {
-        color: var(--teal);
-        font-weight: 750;
-    }
-
-    /* ===== Buttons ===== */
-    .stButton > button,
-    .stDownloadButton > button {
-        border-radius: 10px;
-        min-height: 2.8rem;
-        font-weight: 650;
-        border: 1px solid #31506a;
-        transition: all 0.18s ease;
-    }
-
-    .stButton > button[kind="primary"],
-    .stDownloadButton > button[kind="primary"] {
-        background: linear-gradient(110deg, #0f766e, #0e9488);
-        color: white;
-        border: none;
-    }
-
-    .stButton > button:hover,
-    .stDownloadButton > button:hover {
-        border-color: var(--teal);
-        transform: translateY(-1px);
-    }
-
-    /* ===== Inputs ===== */
-    [data-testid="stTextInput"] input,
-    [data-testid="stNumberInput"] input,
-    [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-        border-radius: 9px;
-    }
-
-    /* ===== Navigation tabs ===== */
-    div[data-baseweb="tab-list"] {
-        gap: 8px;
-        border-bottom: 1px solid var(--border);
-    }
-
-    button[data-baseweb="tab"] {
-        background: #101d30;
-        border: 1px solid transparent;
-        border-radius: 10px 10px 0 0;
-        padding: 0.8rem 1rem;
-        font-weight: 600;
-    }
-
-    button[data-baseweb="tab"][aria-selected="true"] {
-        background: #153344;
-        border-color: #28615f;
-        color: var(--teal);
-    }
-
-    /* ===== Alerts and separators ===== */
-    div[data-testid="stAlert"] {
-        border-radius: 12px;
-    }
-
-    hr {
-        border-color: var(--border);
-        margin: 1.5rem 0;
-    }
-
-    [data-testid="stExpander"] {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-    }
-
-    /* ===== Tables and charts ===== */
-    [data-testid="stDataFrame"],
-    [data-testid="stTable"] {
-        border: 1px solid var(--border);
-        border-radius: 12px;
+    .hd-hero {
+        position: relative;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding: clamp(1.25rem, 3vw, 2.15rem);
+        margin: .2rem 0 1.5rem 0;
+        border: 1px solid rgba(72, 224, 194, .28);
+        border-radius: 24px;
+        background: linear-gradient(118deg, rgba(15, 39, 59, .98), rgba(11, 65, 67, .88));
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .18);
     }
+    .hd-hero:after {
+        content: "";
+        position: absolute;
+        width: 250px; height: 250px;
+        right: -80px; top: -135px;
+        border-radius: 50%;
+        border: 1px solid rgba(72, 224, 194, .20);
+        box-shadow: 0 0 0 28px rgba(72, 224, 194, .035), 0 0 0 58px rgba(72, 224, 194, .025);
+        pointer-events: none;
+    }
+    .hd-brand-line { color: var(--hd-teal); font-size: .76rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; margin-bottom: .55rem; }
+    .hd-title { color: #f4fbff; font-size: clamp(2rem, 4vw, 3.1rem); font-weight: 850; letter-spacing: -.055em; line-height: 1.04; margin: 0; }
+    .hd-title span { color: var(--hd-teal); }
+    .hd-subtitle { color: #b4c9dc; font-size: 1rem; line-height: 1.65; margin-top: .8rem; max-width: 760px; }
+    .hd-status { display: inline-flex; align-items: center; gap: .45rem; border: 1px solid rgba(72, 224, 194, .28); background: rgba(4, 22, 33, .35); border-radius: 999px; padding: .48rem .8rem; color: #c8fff2; font-size: .78rem; white-space: nowrap; }
+    .hd-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hd-teal); box-shadow: 0 0 12px rgba(72, 224, 194, .8); display: inline-block; }
 
-    /* ===== Footer ===== */
-    footer {
-        visibility: hidden;
+    .section-title { color: var(--hd-teal); font-size: 1.55rem; font-weight: 800; letter-spacing: -.025em; margin: .25rem 0 .8rem; }
+    .small-note { color: var(--hd-muted); font-size: .86rem; }
+    .impact-box { background: linear-gradient(125deg, #11263a, #103b40); border: 1px solid rgba(72, 224, 194, .25); border-radius: 18px; padding: 1.35rem 1.5rem; line-height: 1.8; margin: 1rem 0 1.5rem; }
+
+    [data-testid="stMetric"] {
+        height: 100%;
+        background: linear-gradient(145deg, rgba(18, 36, 58, .96), rgba(10, 25, 42, .96));
+        border: 1px solid var(--hd-border);
+        border-radius: 17px;
+        padding: 1.05rem 1.15rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+        transition: border-color .18s ease, transform .18s ease;
     }
+    [data-testid="stMetric"]:hover { border-color: rgba(72, 224, 194, .4); transform: translateY(-1px); }
+    [data-testid="stMetricLabel"] { color: var(--hd-muted); font-size: .88rem; }
+    [data-testid="stMetricValue"] { color: var(--hd-teal); font-weight: 800; letter-spacing: -.03em; }
+
+    div[data-baseweb="tab-list"] { gap: .45rem; border-bottom: 1px solid var(--hd-border); padding-bottom: .35rem; }
+    button[data-baseweb="tab"] { background: rgba(15, 31, 49, .72); border: 1px solid transparent; border-radius: 12px; padding: .78rem 1rem; font-weight: 700; transition: all .18s ease; }
+    button[data-baseweb="tab"]:hover { border-color: rgba(72, 224, 194, .25); color: var(--hd-teal); }
+    button[data-baseweb="tab"][aria-selected="true"] { background: linear-gradient(120deg, rgba(19, 64, 75, .95), rgba(17, 47, 65, .95)); border-color: rgba(72, 224, 194, .32); color: var(--hd-teal); }
+
+    .stButton > button, .stDownloadButton > button { min-height: 2.7rem; border-radius: 11px; font-weight: 700; border: 1px solid #31506a; transition: all .18s ease; }
+    .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] { background: linear-gradient(110deg, #0f766e, #0e9488); color: white; border: 0; }
+    .stButton > button:hover, .stDownloadButton > button:hover { border-color: var(--hd-teal); transform: translateY(-1px); }
+    [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input, [data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-testid="stMultiSelect"] [data-baseweb="select"] > div { border-radius: 10px; }
+    .stChatInput textarea { color: #fff !important; background: #13263b !important; caret-color: #fff !important; border-radius: 14px !important; }
+    .stChatInput textarea::placeholder { color: #b7c7d8 !important; opacity: 1 !important; }
+    [data-testid="stChatMessage"] { border: 1px solid rgba(142, 178, 205, .13); border-radius: 15px; padding: .8rem 1rem; margin-bottom: .65rem; background: rgba(13, 27, 44, .48); }
+    [data-testid="stExpander"] { border: 1px solid var(--hd-border); border-radius: 13px; background: rgba(13, 27, 44, .38); }
+    [data-testid="stAlert"] { border-radius: 13px; }
+    [data-testid="stDataFrame"], [data-testid="stTable"] { border: 1px solid var(--hd-border); border-radius: 13px; overflow: hidden; }
+    iframe { border-radius: 16px; }
+    hr { border-color: var(--hd-border); margin: 1.4rem 0; }
+    footer { visibility: hidden; }
 
     @media (max-width: 768px) {
-        .block-container {
-            padding-top: 1rem;
-        }
-
-        .impact-box {
-            padding: 1rem;
-        }
+        .block-container { padding-top: .75rem; }
+        .hd-hero { border-radius: 17px; align-items: flex-start; flex-direction: column; }
+        .hd-status { white-space: normal; }
+        button[data-baseweb="tab"] { padding: .62rem .65rem; font-size: .82rem; }
     }
     </style>
     """,
@@ -331,7 +247,6 @@ st.markdown(
 )
 
 
-# =========================================================
 # 3. SESSION STATE
 # =========================================================
 
@@ -419,6 +334,28 @@ with st.sidebar:
     )
 
 # =========================================================
+# =========================================================
+# HYDRODECISION AI — MAIN HERO
+# =========================================================
+
+st.markdown(
+    f"""
+    <section class="hd-hero">
+      <div>
+        <div class="hd-brand-line">Groundwater intelligence platform</div>
+        <h1 class="hd-title">HydroDecision <span>AI</span></h1>
+        <div class="hd-subtitle">
+          Evidence-aware analysis, groundwater data exploration, scenario testing,
+          and geospatial intelligence for more informed water-resource decisions.
+        </div>
+      </div>
+      <div class="hd-status"><span class="hd-status-dot"></span> Active workspace · {escape(region) if region else "Select a region"}</div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 # REAL GROUNDWATER INDICATORS
 # =========================================================
 
@@ -679,134 +616,195 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 
 # =========================================================
-# AI QUESTION-AND-ANSWER INTERFACE
-# =========================================================
+with tab1:
 
-st.markdown("### 💬 Ask HydroDecision AI")
+    # AI QUESTION-AND-ANSWER INTERFACE
+    # =========================================================
 
-st.write(
-    "Ask questions about groundwater, hydrogeology, "
-    "climate risks, and water-resource management. "
-    "You can use the fixed PDF library and upload additional PDFs."
-)
+    st.markdown("### 💬 Ask HydroDecision AI")
 
-st.markdown("#### 📚 Scientific PDF Knowledge Base")
-st.caption(
-    "Place permanent scientific PDFs in the project's knowledge_base folder, "
-    "or upload PDFs below. Click Build / Refresh Index after changing documents."
-)
-
-with st.expander("How to add permanent PDFs", expanded=False):
-    st.code(str(KNOWLEDGE_BASE_DIR), language="text")
     st.write(
-        "Create this folder if it does not exist, copy your scientific PDF "
-        "documents into it, then return here and rebuild the index."
+        "Ask questions about groundwater, hydrogeology, "
+        "climate risks, and water-resource management. "
+        "You can use the fixed PDF library and upload additional PDFs."
     )
 
-uploaded_pdfs = st.file_uploader(
-    "Upload scientific PDFs for this session",
-    type=["pdf"],
-    accept_multiple_files=True,
-    key="rag_pdf_uploader",
-)
-
-if st.button(
-    "🧠 Build / Refresh PDF Index",
-    type="primary",
-    use_container_width=True,
-    key="build_rag_index",
-):
-    with st.spinner("Reading PDFs and building the search index..."):
-        try:
-            vector_store, document_count, fingerprint = build_rag_index(uploaded_pdfs)
-            if vector_store is None:
-                st.session_state.rag_vector_store = None
-                st.session_state.rag_fingerprint = fingerprint
-                st.session_state.rag_doc_count = 0
-                st.session_state.rag_indexed_sources = []
-                st.warning(
-                    "No readable PDF text was found. Add PDFs with selectable text; "
-                    "scanned PDFs may need OCR first."
-                )
-            else:
-                st.session_state.rag_vector_store = vector_store
-                st.session_state.rag_fingerprint = fingerprint
-                st.session_state.rag_doc_count = document_count
-                st.session_state.rag_indexed_sources = [
-                    doc.name for doc in (uploaded_pdfs or [])
-                ]
-                st.success(
-                    f"PDF index is ready. Indexed {document_count} PDF page(s)."
-                )
-        except Exception as exc:
-            st.error(f"Could not build the PDF index: {exc}")
-            st.info(
-                "Check GOOGLE_API_KEY and install the RAG dependencies "
-                "listed in requirements.txt."
-            )
-
-if st.session_state.get("rag_vector_store") is not None:
-    st.success(
-        f"PDF search is active ({st.session_state.get('rag_doc_count', 0)} "
-        "PDF pages indexed)."
-    )
-else:
-    st.info(
-        "PDF search is not active yet. The chat will still work without RAG. "
-        "Build the index after adding documents."
+    st.markdown("#### 📚 Scientific PDF Knowledge Base")
+    st.caption(
+        "Place permanent scientific PDFs in the project's knowledge_base folder, "
+        "or upload PDFs below. Click Build / Refresh Index after changing documents."
     )
 
-if "qa_history" not in st.session_state:
-    st.session_state.qa_history = []
+    with st.expander("How to add permanent PDFs", expanded=False):
+        st.code(str(KNOWLEDGE_BASE_DIR), language="text")
+        st.write(
+            "Create this folder if it does not exist, copy your scientific PDF "
+            "documents into it, then return here and rebuild the index."
+        )
 
-# Display previous messages
-for message in st.session_state.qa_history:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    uploaded_pdfs = st.file_uploader(
+        "Upload scientific PDFs for this session",
+        type=["pdf"],
+        accept_multiple_files=True,
+        key="rag_pdf_uploader",
+    )
 
-# Question input
-question = st.chat_input(
-    "Write your question here...",
-    key="hydrodecision_question",
-)
-
-if question:
-    st.session_state.qa_history.append({
-        "role": "user",
-        "content": question,
-    })
-
-    with st.chat_message("user"):
-        st.markdown(question)
-
-    with st.chat_message("assistant"):
-        with st.spinner("HydroDecision AI is thinking..."):
+    if st.button(
+        "🧠 Build / Refresh PDF Index",
+        type="primary",
+        use_container_width=True,
+        key="build_rag_index",
+    ):
+        with st.spinner("Reading PDFs and building the search index..."):
             try:
-                answer = asyncio.run(
-                    answer_user_question(
-                        question,
-                        region,
+                vector_store, document_count, fingerprint = build_rag_index(uploaded_pdfs)
+                if vector_store is None:
+                    st.session_state.rag_vector_store = None
+                    st.session_state.rag_fingerprint = fingerprint
+                    st.session_state.rag_doc_count = 0
+                    st.session_state.rag_indexed_sources = []
+                    st.warning(
+                        "No readable PDF text was found. Add PDFs with selectable text; "
+                        "scanned PDFs may need OCR first."
                     )
-                )
-
-                st.markdown(answer)
-
-                st.session_state.qa_history.append({
-                    "role": "assistant",
-                    "content": answer,
-                })
-
+                else:
+                    st.session_state.rag_vector_store = vector_store
+                    st.session_state.rag_fingerprint = fingerprint
+                    st.session_state.rag_doc_count = document_count
+                    st.session_state.rag_indexed_sources = [
+                        doc.name for doc in (uploaded_pdfs or [])
+                    ]
+                    st.success(
+                        f"PDF index is ready. Indexed {document_count} PDF page(s)."
+                    )
             except Exception as exc:
-                st.error(
-                    f"Could not generate an answer: {exc}"
+                st.error(f"Could not build the PDF index: {exc}")
+                st.info(
+                    "Check GOOGLE_API_KEY and install the RAG dependencies "
+                    "listed in requirements.txt."
                 )
 
-if st.button("🗑️ Clear Chat", key="clear_qa_chat"):
-    st.session_state.qa_history = []
-    st.rerun()
+    if st.session_state.get("rag_vector_store") is not None:
+        st.success(
+            f"PDF search is active ({st.session_state.get('rag_doc_count', 0)} "
+            "PDF pages indexed)."
+        )
+    else:
+        st.info(
+            "PDF search is not active yet. The chat will still work without RAG. "
+            "Build the index after adding documents."
+        )
+
+    def answer_to_pdf(answer_text: str) -> bytes:
+        """Create a downloadable PDF from one HydroDecision AI answer."""
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2 * cm,
+            leftMargin=2 * cm,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm,
+            title="HydroDecision AI Answer",
+        )
+        styles = getSampleStyleSheet()
+        body_style = ParagraphStyle(
+            "AnswerBody",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=14,
+            alignment=TA_LEFT,
+            spaceAfter=7,
+        )
+        story = [Paragraph("HydroDecision AI — Answer", styles["Title"]), Spacer(1, 12)]
+        # Preserve paragraphs and make common Markdown symbols safe for ReportLab.
+        for line in answer_text.splitlines():
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 6))
+                continue
+            line = re.sub(r"^#{1,6}\s*", "", line)
+            line = re.sub(r"^[-*+]\s+", "• ", line)
+            line = re.sub(r"^\d+[.)]\s+", "• ", line)
+            line = line.replace("**", "").replace("__", "").replace("`", "")
+            story.append(Paragraph(escape(line), body_style))
+        doc.build(story)
+        return buffer.getvalue()
 
 
-# =========================================================
+    if "qa_history" not in st.session_state:
+        st.session_state.qa_history = []
+
+    # Display previous messages, with a PDF download button under each AI answer.
+    for message_index, message in enumerate(st.session_state.qa_history):
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            if message["role"] == "assistant":
+                try:
+                    st.download_button(
+                        label="📄 Download answer as PDF",
+                        data=answer_to_pdf(message["content"]),
+                        file_name=f"hydrodecision_answer_{message_index}.pdf",
+                        mime="application/pdf",
+                        key=f"download_answer_pdf_{message_index}",
+                        on_click="ignore",
+                    )
+                except Exception as pdf_error:
+                    st.warning(f"Could not prepare the PDF: {pdf_error}")
+
+    # Question input
+    question = st.chat_input(
+        "Write your question here...",
+        key="hydrodecision_question",
+    )
+
+    if question:
+        st.session_state.qa_history.append({
+            "role": "user",
+            "content": question,
+        })
+
+        with st.chat_message("user"):
+            st.markdown(question)
+
+        with st.chat_message("assistant"):
+            with st.spinner("HydroDecision AI is thinking..."):
+                try:
+                    answer = asyncio.run(
+                        answer_user_question(
+                            question,
+                            region,
+                        )
+                    )
+
+                    st.markdown(answer)
+
+                    st.download_button(
+                        label="📄 Download answer as PDF",
+                        data=answer_to_pdf(answer),
+                        file_name=f"hydrodecision_answer_{len(st.session_state.qa_history)}.pdf",
+                        mime="application/pdf",
+                        key=f"download_new_answer_pdf_{len(st.session_state.qa_history)}",
+                        on_click="ignore",
+                    )
+
+                    st.session_state.qa_history.append({
+                        "role": "assistant",
+                        "content": answer,
+                    })
+
+                except Exception as exc:
+                    st.error(
+                        f"Could not generate an answer: {exc}"
+                    )
+
+    if st.button("🗑️ Clear Chat", key="clear_qa_chat"):
+        st.session_state.qa_history = []
+        st.rerun()
+
+
+    # =========================================================
 # TAB 2: LIVE DASHBOARD
 # =========================================================
 
@@ -1218,10 +1216,30 @@ with tab4:
 
     st.markdown("### 💧 Piezometric Map")
 
-    show_piezometric_map = st.toggle(
-        "Show / Hide Piezometric Map",
+    map_option_col1, map_option_col2 = st.columns(2)
+
+    # Define every layer toggle explicitly before using it below.
+    # Calling checkbox through the column object also makes the variable
+    # assignments clear to static analyzers such as Pylance.
+    show_piezometric_map = map_option_col1.checkbox(
+        "Show piezometric contours",
         value=False,
         key="show_piezometric_map",
+    )
+    show_flow_arrows = map_option_col1.checkbox(
+        "Show groundwater flow direction",
+        value=False,
+        key="show_groundwater_flow_arrows",
+    )
+    show_well_locations = map_option_col2.checkbox(
+        "Show well locations",
+        value=True,
+        key="show_well_locations",
+    )
+    show_well_names = map_option_col2.checkbox(
+        "Show well names / IDs",
+        value=False,
+        key="show_well_names",
     )
 
     piezo_map = None
@@ -1254,7 +1272,7 @@ with tab4:
     # 4. LOAD AND DISPLAY REAL WELL DATA
     # -----------------------------------------------------
 
-    if show_piezometric_map:
+    if (show_piezometric_map or show_flow_arrows or show_well_locations or show_well_names):
         data_dir = Path(__file__).parent / "data"
 
         csv_files = [
@@ -1293,7 +1311,7 @@ with tab4:
                 df.columns = [str(c).strip() for c in df.columns]
 
                 if all(c in df.columns for c in required_columns):
-                    frames.append(df[required_columns].copy())
+                    frames.append(df.copy())
                 else:
                     st.warning(
                         f"Required columns are missing in {filename}."
@@ -1335,14 +1353,26 @@ with tab4:
                 wells["Z"] - wells["Niveau statique"]
             )
 
-            wells = (
-                wells.groupby(["X", "Y"], as_index=False)
-                .agg({
-                    "Z": "mean",
-                    "Niveau statique": "mean",
-                    "Piezometric head (m)": "mean",
-                })
+            # Use a real name/code column when the source CSV provides one.
+            name_candidates = [
+                "Well name", "Nom du forage", "Nom forage", "Nom du puits",
+                "Code forage", "Code du forage", "N° forage", "N° du forage",
+                "Forage", "Puits", "Well ID", "ID", "id", "Code",
+            ]
+            name_column = next(
+                (column for column in name_candidates if column in wells.columns),
+                None,
             )
+            aggregation = {
+                "Z": "mean",
+                "Niveau statique": "mean",
+                "Piezometric head (m)": "mean",
+            }
+            if name_column:
+                aggregation[name_column] = "first"
+
+            wells = wells.groupby(["X", "Y"], as_index=False).agg(aggregation)
+            wells["Display ID"] = [f"Well {i + 1}" for i in range(len(wells))]
 
             if wells.empty:
                 st.warning("No valid well records were found.")
@@ -1392,6 +1422,7 @@ with tab4:
                         options=[1, 2, 5, 10, 20],
                         index=3,
                         key="piezometric_contour_interval",
+                        disabled=not show_piezometric_map,
                     )
 
                     grid_size = 250
@@ -1492,17 +1523,8 @@ with tab4:
                         # FLOW DIRECTION ARROWS
                         # -------------------------------------
 
-                        st.markdown(
-                            "#### ➤ Estimated Groundwater Flow"
-                        )
-
-                        show_flow_arrows = st.checkbox(
-                            "Show groundwater flow direction arrows",
-                            value=True,
-                            key="show_groundwater_flow_arrows",
-                        )
-
                         if show_flow_arrows:
+                            st.markdown("#### ➤ Estimated Groundwater Flow")
                             dx = (
                                 grid_x[0, 1] - grid_x[0, 0]
                             )
@@ -1616,128 +1638,142 @@ with tab4:
                                 )
 
                         # -------------------------------------
-                        # CONTOUR LINES
-                        # -------------------------------------
+                        if show_piezometric_map:
+                            # CONTOUR LINES
+                            # -------------------------------------
 
-                        min_head = float(np.nanmin(heads))
-                        max_head = float(np.nanmax(heads))
+                            min_head = float(np.nanmin(heads))
+                            max_head = float(np.nanmax(heads))
 
-                        first_level = (
-                            np.ceil(min_head / contour_interval)
-                            * contour_interval
-                        )
-                        last_level = (
-                            np.floor(max_head / contour_interval)
-                            * contour_interval
-                        )
-
-                        levels = np.arange(
-                            first_level,
-                            last_level + contour_interval * 0.5,
-                            contour_interval,
-                        )
-
-                        if len(levels) > 0:
-                            fig, ax = plt.subplots(figsize=(8, 8))
-
-                            contour_set = ax.contour(
-                                grid_x,
-                                grid_y,
-                                smoothed_grid,
-                                levels=levels,
+                            first_level = (
+                                np.ceil(min_head / contour_interval)
+                                * contour_interval
+                            )
+                            last_level = (
+                                np.floor(max_head / contour_interval)
+                                * contour_interval
                             )
 
-                            contour_levels = contour_set.levels
-                            contour_segments = contour_set.allsegs
+                            levels = np.arange(
+                                first_level,
+                                last_level + contour_interval * 0.5,
+                                contour_interval,
+                            )
 
-                            plt.close(fig)
+                            if len(levels) > 0:
+                                fig, ax = plt.subplots(figsize=(8, 8))
 
-                            for level, segments in zip(
-                                contour_levels,
-                                contour_segments,
-                            ):
-                                for segment in segments:
-                                    if len(segment) < 3:
-                                        continue
+                                contour_set = ax.contour(
+                                    grid_x,
+                                    grid_y,
+                                    smoothed_grid,
+                                    levels=levels,
+                                )
 
-                                    latlon_points = []
+                                contour_levels = contour_set.levels
+                                contour_segments = contour_set.allsegs
 
-                                    for x_coord, y_coord in segment:
-                                        longitude, latitude = (
-                                            transformer.transform(
-                                                float(x_coord),
-                                                float(y_coord),
+                                plt.close(fig)
+
+                                for level, segments in zip(
+                                    contour_levels,
+                                    contour_segments,
+                                ):
+                                    for segment in segments:
+                                        if len(segment) < 3:
+                                            continue
+
+                                        latlon_points = []
+
+                                        for x_coord, y_coord in segment:
+                                            longitude, latitude = (
+                                                transformer.transform(
+                                                    float(x_coord),
+                                                    float(y_coord),
+                                                )
                                             )
-                                        )
 
-                                        latlon_points.append([
-                                            latitude,
-                                            longitude,
-                                        ])
+                                            latlon_points.append([
+                                                latitude,
+                                                longitude,
+                                            ])
 
-                                    folium.PolyLine(
-                                        locations=latlon_points,
-                                        color="#e53935",
-                                        weight=2,
-                                        opacity=0.85,
-                                        smooth_factor=2,
-                                        tooltip=(
-                                            "Estimated piezometric head: "
-                                            f"{level:.1f} m"
-                                        ),
-                                    ).add_to(piezo_map)
+                                        folium.PolyLine(
+                                            locations=latlon_points,
+                                            color="#e53935",
+                                            weight=2,
+                                            opacity=0.85,
+                                            smooth_factor=2,
+                                            tooltip=(
+                                                "Estimated piezometric head: "
+                                                f"{level:.1f} m"
+                                            ),
+                                        ).add_to(piezo_map)
 
-                            st.caption(
-                                "Red lines show interpolated contours. "
-                                "Their appearance depends on well density, "
-                                "measurement quality, and contour interval."
-                            )
+                                st.caption(
+                                    "Red lines show interpolated contours. "
+                                    "Their appearance depends on well density, "
+                                    "measurement quality, and contour interval."
+                                )
+                            else:
+                                st.warning(
+                                    "No contour levels fall within the measured "
+                                    "head range. Try a smaller interval."
+                                )
+
                         else:
                             st.warning(
-                                "No contour levels fall within the measured "
-                                "head range. Try a smaller interval."
+                                "Interpolation could not produce a usable "
+                                "surface. Check well locations and measurements."
                             )
-
-                    else:
-                        st.warning(
-                            "Interpolation could not produce a usable "
-                            "surface. Check well locations and measurements."
-                        )
 
                 # ---------------------------------------------
                 # 6. MEASURED WELL MARKERS
                 # ---------------------------------------------
 
-                for _, well in wells.iterrows():
-                    longitude, latitude = transformer.transform(
-                        float(well["X"]),
-                        float(well["Y"]),
+                if st.session_state.get("show_well_locations", True) or st.session_state.get("show_well_names", False):
+                    for _, well in wells.iterrows():
+                        longitude, latitude = transformer.transform(
+                            float(well["X"]),
+                            float(well["Y"]),
+                        )
+                        head = float(well["Piezometric head (m)"])
+                        display_name = (
+                            str(well[name_column])
+                            if name_column and pd.notna(well.get(name_column))
+                            else str(well["Display ID"])
+                        )
+
+                        if st.session_state.get("show_well_locations", True):
+                            folium.CircleMarker(
+                                location=[latitude, longitude],
+                                radius=5,
+                                color="#00695c",
+                                fill=True,
+                                fill_color="#00bfa5",
+                                fill_opacity=0.9,
+                                tooltip=(display_name if st.session_state.get("show_well_names", False) else f"Measured head: {head:.2f} m"),
+                                popup=(
+                                    f"<b>Well:</b> {display_name}<br>"
+                                    f"<b>Piezometric head:</b> {head:.2f} m<br>"
+                                    f"<b>Ground elevation:</b> {well['Z']:.2f} m<br>"
+                                    f"<b>Static water depth:</b> {well['Niveau statique']:.2f} m"
+                                ),
+                            ).add_to(piezo_map)
+
+                        if st.session_state.get("show_well_names", False):
+                            folium.Marker(
+                                location=[latitude, longitude],
+                                icon=folium.DivIcon(
+                                    html=f'<div style="font-size:10px;font-weight:bold;color:#004d40;white-space:nowrap;">{display_name}</div>'
+                                ),
+                                tooltip=display_name,
+                            ).add_to(piezo_map)
+                        well_bounds.append([latitude, longitude])
+
+                    st.caption(
+                        "Green circles indicate well locations. Names/IDs use a source CSV field when available; otherwise generated display IDs are shown. Map tiles © OpenStreetMap contributors."
                     )
-
-                    head = float(well["Piezometric head (m)"])
-
-                    folium.CircleMarker(
-                        location=[latitude, longitude],
-                        radius=5,
-                        color="#00695c",
-                        fill=True,
-                        fill_color="#00bfa5",
-                        fill_opacity=0.9,
-                        tooltip=f"Measured head: {head:.2f} m",
-                        popup=(
-                            f"<b>Piezometric head:</b> {head:.2f} m<br>"
-                            f"<b>Ground elevation:</b> {well['Z']:.2f} m<br>"
-                            f"<b>Static water depth:</b> "
-                            f"{well['Niveau statique']:.2f} m"
-                        ),
-                    ).add_to(piezo_map)
-
-                    well_bounds.append([latitude, longitude])
-
-                st.caption(
-                    "Green circles indicate well locations. "
-                    "Map tiles © OpenStreetMap contributors."
-                )
 
     # -----------------------------------------------------
     # 7. ADD SEARCHED LOCATION TO THE SAME MAP
@@ -1792,15 +1828,69 @@ with tab4:
             padding=(20, 20),
         )
 
-    # -----------------------------------------------------
-    # 8. ADD GOOGLE EARTH ENGINE WATER-RELATED LAYERS
+    # 8. GOOGLE EARTH ENGINE — MULTI-YEAR REMOTE SENSING
     # -----------------------------------------------------
 
-    st.markdown("### 🗺️ Combined Geographic Map")
+    st.markdown("### 🛰️ Remote Sensing & Land Cover")
 
-    # Change these dates to update the NDVI and rainfall layers.
-    gee_start_date = "2026-06-01"
-    gee_end_date = "2026-09-01"
+    year_col, period_col = st.columns(2)
+
+    with year_col:
+        selected_year = st.selectbox(
+            "Analysis year",
+            options=list(range(2025, 2015, -1)),
+            index=1,  # 2024
+            key="gee_analysis_year",
+        )
+
+    with period_col:
+        selected_period = st.selectbox(
+            "Analysis period",
+            options=[
+                "Full year",
+                "Winter (Dec–Feb)",
+                "Spring (Mar–May)",
+                "Summer (Jun–Aug)",
+                "Autumn (Sep–Nov)",
+            ],
+            key="gee_analysis_period",
+        )
+
+    period_months = {
+        "Full year": (1, 1),
+        "Winter (Dec–Feb)": (12, 2),
+        "Spring (Mar–May)": (3, 5),
+        "Summer (Jun–Aug)": (6, 8),
+        "Autumn (Sep–Nov)": (9, 11),
+    }
+
+    start_month, end_month = period_months[selected_period]
+
+    if selected_period == "Full year":
+        gee_start_date = f"{selected_year}-01-01"
+        gee_end_date = f"{selected_year + 1}-01-01"
+    elif selected_period == "Winter (Dec–Feb)":
+        gee_start_date = f"{selected_year - 1}-12-01"
+        gee_end_date = f"{selected_year}-03-01"
+    else:
+        gee_start_date = f"{selected_year}-{start_month:02d}-01"
+        if end_month == 12:
+            gee_end_date = f"{selected_year + 1}-01-01"
+        else:
+            gee_end_date = f"{selected_year}-{end_month + 1:02d}-01"
+
+    index_options = [
+        "NDVI", "EVI", "SAVI", "NDMI",
+        "NDWI", "MNDWI", "NDBI",
+        "CHIRPS rainfall", "LULC","Historical surface-water occurrence (%)",
+        "Top-layer soil moisture",
+    ]
+
+    selected_product = st.selectbox(
+        "Map layer to display",
+        options=index_options,
+        key="gee_selected_product",
+    )
 
     try:
         initialize_earth_engine()
@@ -1809,80 +1899,167 @@ with tab4:
             "projects/supple-kayak-477318-k9/assets/stady_area"
         ).geometry()
 
-        # 1) NDVI from Sentinel-2
+        # ---------------------------------------------
+        # SENTINEL-2 COMPOSITE
+        # ---------------------------------------------
+
+        def mask_clouds(image):
+            scl = image.select("SCL")
+            mask = (
+                scl.neq(3)
+                .And(scl.neq(8))
+                .And(scl.neq(9))
+                .And(scl.neq(10))
+                .And(scl.neq(11))
+            )
+            return image.updateMask(mask)
+
         sentinel = (
             ee.ImageCollection("COPERNICUS/S2_SR_HARMONIZED")
             .filterBounds(study_area)
             .filterDate(gee_start_date, gee_end_date)
-            .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 20))
+            .filter(
+                ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 40)
+            )
+            .map(mask_clouds)
         )
 
         image_count = sentinel.size().getInfo()
-        if image_count == 0:
-            st.warning(
-                "No Sentinel-2 images matched the selected dates and "
-                "cloud filter. The other Google Earth Engine layers "
-                "may still be available."
-            )
-        else:
-            def mask_clouds(image):
-                scl = image.select("SCL")
-                mask = (
-                    scl.neq(3)
-                    .And(scl.neq(8))
-                    .And(scl.neq(9))
-                    .And(scl.neq(10))
-                    .And(scl.neq(11))
+
+        if selected_product in [
+            "NDVI", "EVI", "SAVI", "NDMI",
+            "NDWI", "MNDWI", "NDBI",
+        ]:
+            if image_count == 0:
+                st.warning(
+                    f"No Sentinel-2 images found for "
+                    f"{selected_year} / {selected_period}."
                 )
-                return image.updateMask(mask)
+            else:
+                composite = sentinel.median().clip(study_area)
 
-            composite = sentinel.map(mask_clouds).median().clip(study_area)
-            ndvi = composite.normalizedDifference(["B8", "B4"]).rename("NDVI")
-            ndvi_vis = {
-                "min": -0.2,
-                "max": 0.8,
-                "palette": [
-                    "8c510a", "d8b365", "f6e8c3",
-                    "c7eae5", "5ab4ac", "01665e",
-                ],
-            }
-            ndvi_map = ndvi.getMapId(ndvi_vis)
-            folium.raster_layers.TileLayer(
-                tiles=ndvi_map["tile_fetcher"].url_format,
-                attr="Google Earth Engine / Copernicus Sentinel-2",
-                name="NDVI — Sentinel-2",
-                overlay=True,
-                control=True,
-                opacity=0.7,
-                show=True,
-            ).add_to(piezo_map)
+                # Sentinel-2 SR bands are scaled by 10000.
+                blue = composite.select("B2").multiply(0.0001)
+                green = composite.select("B3").multiply(0.0001)
+                red = composite.select("B4").multiply(0.0001)
+                nir = composite.select("B8").multiply(0.0001)
+                swir1 = composite.select("B11").multiply(0.0001)
 
-        # 2) Long-term surface-water occurrence from the JRC dataset.
-        # This is a historical water-detection product, not a live water map.
-        try:
-            surface_water = ee.Image(
-                "JRC/GSW1_4/GlobalSurfaceWater"
-            ).select("occurrence").clip(study_area)
-            water_vis = {
-                "min": 0,
-                "max": 100,
-                "palette": ["ffffff", "c6dbef", "6baed6", "2171b5", "08306b"],
-            }
-            water_map = surface_water.getMapId(water_vis)
-            folium.raster_layers.TileLayer(
-                tiles=water_map["tile_fetcher"].url_format,
-                attr="Google Earth Engine / JRC Global Surface Water",
-                name="Surface-water occurrence — JRC (historical %)",
-                overlay=True,
-                control=True,
-                opacity=0.75,
-                show=False,
-            ).add_to(piezo_map)
-        except Exception as exc:
-            st.warning(f"JRC surface-water layer could not be loaded: {exc}")
+                if selected_product == "NDVI":
+                    image = nir.subtract(red).divide(
+                        nir.add(red)
+                    ).rename("NDVI")
+                    vis = {
+                        "min": -0.2, "max": 0.8,
+                        "palette": [
+                            "8c510a", "d8b365", "f6e8c3",
+                            "a6d96a", "1a9850", "006837",
+                        ],
+                    }
 
-        # 3) Accumulated rainfall from CHIRPS for the selected date range.
-        try:
+                elif selected_product == "EVI":
+                    image = (
+                        nir.subtract(red)
+                        .multiply(2.5)
+                        .divide(
+                            nir.add(red.multiply(6))
+                            .subtract(blue.multiply(7.5))
+                            .add(1)
+                        )
+                        .rename("EVI")
+                    )
+                    vis = {
+                        "min": -0.2, "max": 0.8,
+                        "palette": [
+                            "a6611a", "dfc27d", "f5f5f5",
+                            "80cdc1", "018571",
+                        ],
+                    }
+
+                elif selected_product == "SAVI":
+                    image = (
+                        nir.subtract(red)
+                        .multiply(1.5)
+                        .divide(nir.add(red).add(0.5))
+                        .rename("SAVI")
+                    )
+                    vis = {
+                        "min": -0.2, "max": 0.8,
+                        "palette": [
+                            "8c510a", "d8b365", "f6e8c3",
+                            "a6d96a", "1a9850",
+                        ],
+                    }
+
+                elif selected_product == "NDMI":
+                    image = nir.subtract(swir1).divide(
+                        nir.add(swir1)
+                    ).rename("NDMI")
+                    vis = {
+                        "min": -0.5, "max": 0.5,
+                        "palette": [
+                            "a6611a", "f5f5f5",
+                            "80cdc1", "018571",
+                        ],
+                    }
+
+                elif selected_product == "NDWI":
+                    image = green.subtract(nir).divide(
+                        green.add(nir)
+                    ).rename("NDWI")
+                    vis = {
+                        "min": -0.5, "max": 0.5,
+                        "palette": [
+                            "a6611a", "f5f5f5",
+                            "67a9cf", "2166ac",
+                        ],
+                    }
+
+                elif selected_product == "MNDWI":
+                    image = green.subtract(swir1).divide(
+                        green.add(swir1)
+                    ).rename("MNDWI")
+                    vis = {
+                        "min": -0.5, "max": 0.5,
+                        "palette": [
+                            "a6611a", "f5f5f5",
+                            "67a9cf", "2166ac",
+                        ],
+                    }
+
+                else:  # NDBI
+                    image = swir1.subtract(nir).divide(
+                        swir1.add(nir)
+                    ).rename("NDBI")
+                    vis = {
+                        "min": -0.5, "max": 0.5,
+                        "palette": [
+                            "2166ac", "f7f7f7", "b2182b",
+                        ],
+                    }
+
+                layer = image.getMapId(vis)
+
+                folium.raster_layers.TileLayer(
+                    tiles=layer["tile_fetcher"].url_format,
+                    attr="Google Earth Engine / Sentinel-2",
+                    name=f"{selected_product} — {selected_year}",
+                    overlay=True,
+                    control=True,
+                    opacity=0.8,
+                    show=True,
+                ).add_to(piezo_map)
+
+                st.caption(
+                    f"Sentinel-2 images used: {image_count}. "
+                    "Cloud masking and seasonal coverage affect results."
+                )
+
+        # ---------------------------------------------
+        # CHIRPS RAINFALL
+        # ---------------------------------------------
+
+        if selected_product == "CHIRPS rainfall":
             rainfall = (
                 ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
                 .filterBounds(study_area)
@@ -1891,80 +2068,239 @@ with tab4:
                 .sum()
                 .clip(study_area)
             )
+
             rainfall_vis = {
                 "min": 0,
                 "max": 250,
-                "palette": ["fff7bc", "fec44f", "fe9929", "ec7014", "cc4c02", "8c2d04"],
+                "palette": [
+                    "fff7bc", "fec44f", "fe9929",
+                    "ec7014", "cc4c02", "8c2d04",
+                ],
             }
-            rainfall_map = rainfall.getMapId(rainfall_vis)
+
+            layer = rainfall.getMapId(rainfall_vis)
+
             folium.raster_layers.TileLayer(
-                tiles=rainfall_map["tile_fetcher"].url_format,
+                tiles=layer["tile_fetcher"].url_format,
                 attr="Google Earth Engine / CHIRPS",
-                name="Accumulated rainfall — CHIRPS (mm)",
+                name=f"Rainfall (mm) — {selected_year}",
                 overlay=True,
                 control=True,
-                opacity=0.7,
-                show=False,
+                opacity=0.8,
+                show=True,
             ).add_to(piezo_map)
-        except Exception as exc:
-            st.warning(f"CHIRPS rainfall layer could not be loaded: {exc}")
 
-        # 4) ERA5-Land top-layer soil-water volume for the selected period.
-        # This is a soil-moisture proxy, not a direct groundwater measurement.
-        try:
-            soil_water = (
-                ee.ImageCollection("ECMWF/ERA5_LAND/MONTHLY_AGGR")
+            st.caption(
+                "CHIRPS rainfall is an estimated precipitation product "
+                "at coarser resolution than Sentinel-2."
+            )
+
+        # ---------------------------------------------
+        # DYNAMIC WORLD LULC
+        # ---------------------------------------------
+
+        if selected_product == "LULC":
+            dynamic_world = (
+                ee.ImageCollection("GOOGLE/DYNAMICWORLD/V1")
                 .filterBounds(study_area)
                 .filterDate(gee_start_date, gee_end_date)
-                .select("volumetric_soil_water_layer_1")
-                .mean()
+                .select("label")
+            )
+
+            dw_count = dynamic_world.size().getInfo()
+
+            if dw_count == 0:
+                st.warning(
+                    "No Dynamic World observations are available "
+                    "for this period."
+                )
+            else:
+                lulc_image = (
+                    dynamic_world.mode()
+                    .clip(study_area)
+                    .rename("LULC")
+                )
+
+                lulc_vis = {
+                    "min": 0,
+                    "max": 8,
+                    "palette": [
+                        "419bdf",  # Water
+                        "397d49",  # Trees
+                        "88b053",  # Grass
+                        "7a87c6",  # Flooded vegetation
+                        "e49635",  # Crops
+                        "dfc35a",  # Shrub and scrub
+                        "c4281b",  # Built area
+                        "a59b8f",  # Bare ground
+                        "b39fe1",  # Snow and ice
+                    ],
+                }
+
+                layer = lulc_image.getMapId(lulc_vis)
+
+                folium.raster_layers.TileLayer(
+                    tiles=layer["tile_fetcher"].url_format,
+                    attr="Google Earth Engine / Dynamic World",
+                    name=f"LULC — {selected_year}",
+                    overlay=True,
+                    control=True,
+                    opacity=0.8,
+                    show=True,
+                ).add_to(piezo_map)
+
+                st.caption(
+                    f"Dynamic World observations: {dw_count}. "
+                    "The map shows the most frequent class per pixel "
+                    "during the selected period, not a field-verified map."
+                )
+
+        # ---------------------------------------------
+        # HISTORICAL SURFACE WATER
+        # ---------------------------------------------
+
+        if selected_product == "Historical surface-water occurrence (%)":
+            surface_water = (
+                ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
+                .select("occurrence")
                 .clip(study_area)
             )
-            soil_vis = {
-                "min": 0.0,
-                "max": 0.5,
-                "palette": ["fff7fb", "d4b9da", "c994c7", "df65b0", "ce1256", "67001f"],
-            }
-            soil_map = soil_water.getMapId(soil_vis)
+
+            water_layer = surface_water.getMapId({
+                "min": 0,
+                "max": 100,
+                "palette": [
+                    "ffffff", "c6dbef", "6baed6",
+                    "2171b5", "08306b",
+                ],
+            })
+
             folium.raster_layers.TileLayer(
-                tiles=soil_map["tile_fetcher"].url_format,
-                attr="Google Earth Engine / ERA5-Land",
-                name="Top-layer soil moisture — ERA5-Land",
+                tiles=water_layer["tile_fetcher"].url_format,
+                attr="Google Earth Engine / JRC",
+                name="Historical surface-water occurrence (%)",
                 overlay=True,
-                control=True,
-                opacity=0.7,
-                show=False,
+                control=False,
+                opacity=0.65,
+                show=True,
             ).add_to(piezo_map)
-        except Exception as exc:
-            st.warning(f"ERA5-Land soil-moisture layer could not be loaded: {exc}")
+
+        # ---------------------------------------------
+        # ERA5-LAND SOIL MOISTURE
+        # ---------------------------------------------
+
+        elif selected_product == "Top-layer soil moisture":
+            try:
+                soil_water = (
+                    ee.ImageCollection("ECMWF/ERA5_LAND/MONTHLY_AGGR")
+                    .filterBounds(study_area)
+                    .filterDate(gee_start_date, gee_end_date)
+                    .select("volumetric_soil_water_layer_1")
+                    .mean()
+                    .clip(study_area)
+                )
+
+                soil_layer = soil_water.getMapId({
+                    "min": 0,
+                    "max": 0.5,
+                    "palette": [
+                        "fff7fb", "d4b9da", "c994c7",
+                        "df65b0", "ce1256", "67001f",
+                    ],
+                })
+
+                folium.raster_layers.TileLayer(
+                    tiles=soil_layer["tile_fetcher"].url_format,
+                    attr="Google Earth Engine / ERA5-Land",
+                    name="Top-layer soil moisture",
+                    overlay=True,
+                    control=False,
+                    opacity=0.65,
+                    show=True,
+                ).add_to(piezo_map)
+
+            except Exception as exc:
+                st.warning(f"ERA5-Land layer unavailable: {exc}")# ---------------------------------------------
+        # HISTORICAL SURFACE WATER
+        # ---------------------------------------------
+
+        if selected_product == "Historical surface-water occurrence (%)":
+            surface_water = (
+                ee.Image("JRC/GSW1_4/GlobalSurfaceWater")
+                .select("occurrence")
+                .clip(study_area)
+            )
+
+            water_layer = surface_water.getMapId({
+                "min": 0,
+                "max": 100,
+                "palette": [
+                    "ffffff", "c6dbef", "6baed6",
+                    "2171b5", "08306b",
+                ],
+            })
+
+            folium.raster_layers.TileLayer(
+                tiles=water_layer["tile_fetcher"].url_format,
+                attr="Google Earth Engine / JRC",
+                name="Historical surface-water occurrence (%)",
+                overlay=True,
+                control=False,
+                opacity=0.65,
+                show=True,
+            ).add_to(piezo_map)
+
+        # ---------------------------------------------
+        # ERA5-LAND SOIL MOISTURE
+        # ---------------------------------------------
+
+        elif selected_product == "Top-layer soil moisture":
+            try:
+                soil_water = (
+                    ee.ImageCollection("ECMWF/ERA5_LAND/MONTHLY_AGGR")
+                    .filterBounds(study_area)
+                    .filterDate(gee_start_date, gee_end_date)
+                    .select("volumetric_soil_water_layer_1")
+                    .mean()
+                    .clip(study_area)
+                )
+
+                soil_layer = soil_water.getMapId({
+                    "min": 0,
+                    "max": 0.5,
+                    "palette": [
+                        "fff7fb", "d4b9da", "c994c7",
+                        "df65b0", "ce1256", "67001f",
+                    ],
+                })
+
+                folium.raster_layers.TileLayer(
+                    tiles=soil_layer["tile_fetcher"].url_format,
+                    attr="Google Earth Engine / ERA5-Land",
+                    name="Top-layer soil moisture",
+                    overlay=True,
+                    control=False,
+                    opacity=0.65,
+                    show=True,
+                ).add_to(piezo_map)
+
+            except Exception as exc:
+                st.warning(f"ERA5-Land layer unavailable: {exc}")
 
     except Exception as exc:
-        st.warning(
-            "Google Earth Engine layers could not be loaded. "
-            f"The base map and groundwater layers can still appear. Details: {exc}"
-        )
+        st.warning(f"Remote-sensing layer could not be loaded: {exc}")
 
-    # Add the layer selector once, after all map layers have been added.
-    folium.LayerControl(collapsed=False).add_to(piezo_map)
-
-    # Render the map once, after all layers have been added.
+    # -----------------------------------------------------
+    # 7. DISPLAY THE MAP IN STREAMLIT
+    # -----------------------------------------------------
+    folium.LayerControl(collapsed=True).add_to(piezo_map)
     st_folium(
         piezo_map,
-        width="stretch",
+        width=None,
         height=650,
-        key="hydrodecision_combined_map",
+        returned_objects=[],
+        key="hydrodecision_geographic_map",
     )
-
-    st.caption(
-        "Blue marker: searched location. Green circles: wells. "
-        "Red lines: interpolated piezometric contours. Blue arrows: estimated "
-        "groundwater-flow directions. GEE overlays: Sentinel-2 NDVI, historical "
-        "JRC surface-water occurrence, CHIRPS accumulated rainfall, and ERA5-Land "
-        "top-layer soil moisture. These products have different resolutions and "
-        "do not directly measure groundwater levels."
-    )
-
-
 
 # =========================================================
 # 8. FOOTER

@@ -2,12 +2,10 @@
 .env
 .env.*
 !.env.example
-
-.venv/
 venv/
 __pycache__/
 *.py[cod]
-
+chroma_db/
+app.backup-*.py
+upgrade_hydrodecision_ui.py
 .streamlit/secrets.toml
-
-.DS_Store
